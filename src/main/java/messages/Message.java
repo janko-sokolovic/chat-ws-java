@@ -6,6 +6,15 @@ public class Message implements Serializable{
 
     private String text;
     private String user;
+    private MessageType type;
+
+    public MessageType getType() {
+        return type;
+    }
+
+    public void setType(MessageType type) {
+        this.type = type;
+    }
 
     public String getText() {
         return text;
