@@ -58,10 +58,10 @@ public class ChatServer extends WebSocketServer {
 
             switch (msg.getType()) {
                 case USER_JOINED:
-                    addUser(msg.getUser());
+                    addUser(new User(msg.getUser().getName()));
                     break;
                 case USER_LEFT:
-                    removeUser(msg.getUser());
+                    removeUser(new User(msg.getUser().getName()));
                     break;
                 case TEXT_MESSAGE:
                     broadcastMessage(msg);
@@ -97,9 +97,8 @@ public class ChatServer extends WebSocketServer {
         }
     }
 
-    private void removeUser(String name) throws JsonProcessingException {
-        User userToRemove = new User(name);
-        users.remove(userToRemove);
+    private void removeUser(User user) throws JsonProcessingException {
+        users.remove(user);
         Message newMessage = new Message();
 
         // when user joins send to all users list of active users
@@ -107,14 +106,12 @@ public class ChatServer extends WebSocketServer {
         ObjectMapper mapper = new ObjectMapper();
         String data = mapper.writeValueAsString(users);
         newMessage.setData(data);
-        newMessage.setUser(name);
-        newMessage.setType(MessageType.USER_JOINED);
+        newMessage.setType(MessageType.USER_LEFT);
         broadcastMessage(newMessage);
     }
 
-    private void addUser(String name) throws JsonProcessingException {
-        User newUser = new User(name);
-        users.add(newUser);
+    private void addUser(User user) throws JsonProcessingException {
+        users.add(user);
         Message newMessage = new Message();
 
         // when user joins send to all users list of active users
@@ -122,7 +119,6 @@ public class ChatServer extends WebSocketServer {
         ObjectMapper mapper = new ObjectMapper();
         String data = mapper.writeValueAsString(users);
         newMessage.setData(data);
-        newMessage.setUser(name);
         newMessage.setType(MessageType.USER_JOINED);
         broadcastMessage(newMessage);
     }

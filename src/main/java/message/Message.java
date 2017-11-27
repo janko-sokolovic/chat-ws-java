@@ -1,10 +1,14 @@
 package message;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import user.User;
+
 import java.io.Serializable;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Message implements Serializable{
 
-    private String user;
+    private User user;
     private MessageType type;
     private String data;
 
@@ -16,11 +20,11 @@ public class Message implements Serializable{
         this.type = type;
     }
 
-    public String getUser() {
+    public User getUser() {
         return user;
     }
 
-    public void setUser(String user) {
+    public void setUser(User user) {
         this.user = user;
     }
 
