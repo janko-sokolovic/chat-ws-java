@@ -58,7 +58,7 @@ public class ChatServer extends WebSocketServer {
 
             switch (msg.getType()) {
                 case USER_JOINED:
-                    addUser(new User(msg.getUser().getName()));
+                    addUser(msg.getUser());
                     break;
                 case USER_LEFT:
                     removeUser(new User(msg.getUser().getName()));
@@ -111,6 +111,8 @@ public class ChatServer extends WebSocketServer {
     }
 
     private void addUser(User user) throws JsonProcessingException {
+
+        //respond to that user -> user joined acknoledgement
         users.add(user);
         Message newMessage = new Message();
 
