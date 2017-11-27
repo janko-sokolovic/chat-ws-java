@@ -2,6 +2,7 @@ package user;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 public class User implements Serializable {
     private String id;
@@ -9,6 +10,7 @@ public class User implements Serializable {
 
     public User(String name) {
         this.name = name;
+        id = UUID.randomUUID().toString();
     }
 
     public String getName() {

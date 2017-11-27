@@ -80,7 +80,6 @@ public class ChatServer extends WebSocketServer {
 
         if (conn != null) {
             conns.remove(conn);
-            // do some thing if required
         }
         assert conn != null;
         System.out.println("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
@@ -98,27 +97,31 @@ public class ChatServer extends WebSocketServer {
         }
     }
 
-    private void removeUser(String name) {
+    private void removeUser(String name) throws JsonProcessingException {
         User userToRemove = new User(name);
         users.remove(userToRemove);
         Message newMessage = new Message();
 
         // when user joins send to all users list of active users
         // otherwise new users wouldn't know how many are active
-        newMessage.setData(users.stream().map(User::getName).collect(Collectors.joining(",")));
+        ObjectMapper mapper = new ObjectMapper();
+        String data = mapper.writeValueAsString(users);
+        newMessage.setData(data);
         newMessage.setUser(name);
         newMessage.setType(MessageType.USER_JOINED);
         broadcastMessage(newMessage);
     }
 
-    private void addUser(String name) {
+    private void addUser(String name) throws JsonProcessingException {
         User newUser = new User(name);
         users.add(newUser);
         Message newMessage = new Message();
 
         // when user joins send to all users list of active users
         // otherwise new users wouldn't know how many are active
-        newMessage.setData(users.stream().map(User::getName).collect(Collectors.joining(",")));
+        ObjectMapper mapper = new ObjectMapper();
+        String data = mapper.writeValueAsString(users);
+        newMessage.setData(data);
         newMessage.setUser(name);
         newMessage.setType(MessageType.USER_JOINED);
         broadcastMessage(newMessage);
