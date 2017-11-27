@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ChatServer extends WebSocketServer {
 
@@ -58,10 +57,10 @@ public class ChatServer extends WebSocketServer {
 
             switch (msg.getType()) {
                 case USER_JOINED:
-                    addUser(msg.getUser());
+                    addUser(new User(msg.getUser().getName()), conn);
                     break;
                 case USER_LEFT:
-                    removeUser(new User(msg.getUser().getName()));
+                    removeUser(msg.getUser());
                     break;
                 case TEXT_MESSAGE:
                     broadcastMessage(msg);
@@ -97,31 +96,32 @@ public class ChatServer extends WebSocketServer {
         }
     }
 
-    private void removeUser(User user) throws JsonProcessingException {
-        users.remove(user);
-        Message newMessage = new Message();
-
-        // when user joins send to all users list of active users
-        // otherwise new users wouldn't know how many are active
-        ObjectMapper mapper = new ObjectMapper();
-        String data = mapper.writeValueAsString(users);
-        newMessage.setData(data);
-        newMessage.setType(MessageType.USER_LEFT);
-        broadcastMessage(newMessage);
+    private void addUser(User user, WebSocket conn) throws JsonProcessingException {
+        users.add(user);
+        acknowledgeUserJoined(user, conn);
+        broadcastUserActivityMessage(MessageType.USER_JOINED);
     }
 
-    private void addUser(User user) throws JsonProcessingException {
+    private void removeUser(User user) throws JsonProcessingException {
+        users.remove(user);
+        broadcastUserActivityMessage(MessageType.USER_LEFT);
+    }
 
-        //respond to that user -> user joined acknoledgement
-        users.add(user);
+    private void acknowledgeUserJoined(User user, WebSocket conn) throws JsonProcessingException {
+        Message message = new Message();
+        message.setType(MessageType.USER_JOINED_ACK);
+        message.setUser(user);
+        conn.send(new ObjectMapper().writeValueAsString(message));
+    }
+
+    private void broadcastUserActivityMessage(MessageType messageType) throws JsonProcessingException {
+
         Message newMessage = new Message();
 
-        // when user joins send to all users list of active users
-        // otherwise new users wouldn't know how many are active
         ObjectMapper mapper = new ObjectMapper();
         String data = mapper.writeValueAsString(users);
         newMessage.setData(data);
-        newMessage.setType(MessageType.USER_JOINED);
+        newMessage.setType(messageType);
         broadcastMessage(newMessage);
     }
 
