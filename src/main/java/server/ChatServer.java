@@ -3,18 +3,20 @@ package server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import messages.Message;
+import message.Message;
+import message.MessageType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.WebSocket;
-import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
+import user.User;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ChatServer extends WebSocketServer {
 
@@ -22,11 +24,14 @@ public class ChatServer extends WebSocketServer {
 
     private final static Logger logger = LogManager.getLogger(ChatServer.class);
 
+    private Set<User> users;
+
     private Set<WebSocket> conns;
 
     private ChatServer() {
         super(new InetSocketAddress(TCP_PORT));
         conns = new HashSet<>();
+        users = new HashSet<>();
     }
 
     @Override
@@ -51,15 +56,34 @@ public class ChatServer extends WebSocketServer {
         try {
             Message msg = mapper.readValue(message, Message.class);
 
-            broadcastMessage(msg);
+            switch (msg.getType()) {
+                case USER_JOINED:
+                    addUser(msg.getUser());
+                    break;
+                case USER_LEFT:
+                    removeUser(msg.getUser());
+                    break;
+                case TEXT_MESSAGE:
+                    broadcastMessage(msg);
+            }
 
-            System.out.println("Message from user: " + msg.getUser() + ", text: " + msg.getText() + ", type:" + msg.getType());
-            logger.info("Message from user: " + msg.getUser() + ", text: " + msg.getText());
+            System.out.println("Message from user: " + msg.getUser() + ", text: " + msg.getData() + ", type:" + msg.getType());
+            logger.info("Message from user: " + msg.getUser() + ", text: " + msg.getData());
         } catch (IOException e) {
             logger.error("Wrong message format.");
             // return error message to user
         }
+    }
 
+    @Override
+    public void onError(WebSocket conn, Exception ex) {
+
+        if (conn != null) {
+            conns.remove(conn);
+            // do some thing if required
+        }
+        assert conn != null;
+        System.out.println("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
     }
 
     private void broadcastMessage(Message msg) {
@@ -72,18 +96,32 @@ public class ChatServer extends WebSocketServer {
         } catch (JsonProcessingException e) {
             logger.error("Cannot convert message to json.");
         }
-
     }
 
-    @Override
-    public void onError(WebSocket conn, Exception ex) {
+    private void removeUser(String name) {
+        User userToRemove = new User(name);
+        users.remove(userToRemove);
+        Message newMessage = new Message();
 
-        if (conn != null) {
-            conns.remove(conn);
-            // do some thing if required
-        }
-        assert conn != null;
-        System.out.println("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
+        // when user joins send to all users list of active users
+        // otherwise new users wouldn't know how many are active
+        newMessage.setData(users.stream().map(User::getName).collect(Collectors.joining(",")));
+        newMessage.setUser(name);
+        newMessage.setType(MessageType.USER_JOINED);
+        broadcastMessage(newMessage);
+    }
+
+    private void addUser(String name) {
+        User newUser = new User(name);
+        users.add(newUser);
+        Message newMessage = new Message();
+
+        // when user joins send to all users list of active users
+        // otherwise new users wouldn't know how many are active
+        newMessage.setData(users.stream().map(User::getName).collect(Collectors.joining(",")));
+        newMessage.setUser(name);
+        newMessage.setType(MessageType.USER_JOINED);
+        broadcastMessage(newMessage);
     }
 
     public static void main(String[] args) {
