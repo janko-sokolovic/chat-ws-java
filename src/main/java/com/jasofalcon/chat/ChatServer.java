@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class ChatServer extends WebSocketServer {
 
-    private static int TCP_PORT = 9000;
+    private static int TCP_PORT;
 
     private final static Logger logger = LogManager.getLogger(ChatServer.class);
 
@@ -27,8 +27,8 @@ public class ChatServer extends WebSocketServer {
 
     private Set<WebSocket> conns;
 
-    private ChatServer() {
-        super(new InetSocketAddress(TCP_PORT));
+    private ChatServer(int port) {
+        super(new InetSocketAddress(port));
         conns = new HashSet<>();
         users = new HashSet<>();
     }
@@ -126,7 +126,9 @@ public class ChatServer extends WebSocketServer {
     }
 
     public static void main(String[] args) {
-        new ChatServer().start();
+        int port = Integer.parseInt(System.getenv("PORT"));
+        if (port <= 0) port = 9000;
+        new ChatServer(port).start();
     }
 
 }
