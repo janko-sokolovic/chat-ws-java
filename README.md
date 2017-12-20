@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jasofalcon/chat-ws-java.svg?branch=master)](https://travis-ci.org/jasofalcon/chat-ws-java)
+
 # chat-ws-java
 Simple web socket chat server in Java, using WebSockets 
 
