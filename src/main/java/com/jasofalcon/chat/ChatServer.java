@@ -1,16 +1,16 @@
-package server;
+package com.jasofalcon.chat;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import message.Message;
-import message.MessageType;
+import com.jasofalcon.message.Message;
+import com.jasofalcon.message.MessageType;
+import com.jasofalcon.user.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
-import user.User;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
