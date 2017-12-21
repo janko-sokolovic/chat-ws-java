@@ -19,8 +19,6 @@ import java.util.Set;
 
 public class ChatServer extends WebSocketServer {
 
-    private static int TCP_PORT;
-
     private final static Logger logger = LogManager.getLogger(ChatServer.class);
 
     private Set<User> users;
