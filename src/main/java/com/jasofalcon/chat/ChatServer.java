@@ -14,6 +14,7 @@ import org.java_websocket.server.WebSocketServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,14 +22,14 @@ public class ChatServer extends WebSocketServer {
 
     private final static Logger logger = LogManager.getLogger(ChatServer.class);
 
-    private Set<User> users;
+    private HashMap<WebSocket, User> users;
 
     private Set<WebSocket> conns;
 
     private ChatServer(int port) {
         super(new InetSocketAddress(port));
         conns = new HashSet<>();
-        users = new HashSet<>();
+        users = new HashMap<>();
     }
 
     @Override
@@ -42,6 +43,9 @@ public class ChatServer extends WebSocketServer {
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         conns.remove(conn);
+        // When connection is closed, remove the user.
+        // TODO: should also notify the user and display message
+        users.remove(conn);
 
         logger.info("Connection closed to: " + conn.getRemoteSocketAddress().getHostString());
         System.out.println("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
@@ -58,7 +62,7 @@ public class ChatServer extends WebSocketServer {
                     addUser(new User(msg.getUser().getName()), conn);
                     break;
                 case USER_LEFT:
-                    removeUser(msg.getUser());
+                    removeUser(conn);
                     break;
                 case TEXT_MESSAGE:
                     broadcastMessage(msg);
@@ -95,13 +99,13 @@ public class ChatServer extends WebSocketServer {
     }
 
     private void addUser(User user, WebSocket conn) throws JsonProcessingException {
-        users.add(user);
+        users.put(conn, user);
         acknowledgeUserJoined(user, conn);
         broadcastUserActivityMessage(MessageType.USER_JOINED);
     }
 
-    private void removeUser(User user) throws JsonProcessingException {
-        users.remove(user);
+    private void removeUser(WebSocket conn) throws JsonProcessingException {
+        users.remove(conn);
         broadcastUserActivityMessage(MessageType.USER_LEFT);
     }
 
@@ -117,15 +121,19 @@ public class ChatServer extends WebSocketServer {
         Message newMessage = new Message();
 
         ObjectMapper mapper = new ObjectMapper();
-        String data = mapper.writeValueAsString(users);
+        String data = mapper.writeValueAsString(users.values());
         newMessage.setData(data);
         newMessage.setType(messageType);
         broadcastMessage(newMessage);
     }
 
     public static void main(String[] args) {
-        int port = Integer.parseInt(System.getenv("PORT"));
-        if (port <= 0) port = 9000;
+        int port;
+        try {
+            port = Integer.parseInt(System.getenv("PORT"));
+        } catch (NumberFormatException nfe) {
+            port = 9000;
+        }
         new ChatServer(port).start();
     }
 
