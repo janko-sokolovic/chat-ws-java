@@ -44,8 +44,11 @@ public class ChatServer extends WebSocketServer {
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         conns.remove(conn);
         // When connection is closed, remove the user.
-        // TODO: should also notify the user and display message
-        users.remove(conn);
+        try {
+            removeUser(conn);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
 
         logger.info("Connection closed to: " + conn.getRemoteSocketAddress().getHostString());
         System.out.println("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
